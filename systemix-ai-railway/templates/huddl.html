@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUDDL - Team Messenger by SystemIX AI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1d29;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .huddl-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: #2c2f36;
+            border-right: 1px solid #3c4043;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #3c4043;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .channels {
+            flex: 1;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+        
+        .channel-section {
+            margin-bottom: 20px;
+        }
+        
+        .channel-header {
+            padding: 0 20px 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .channel-item {
+            padding: 8px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .channel-item:hover {
+            background: #3c4043;
+        }
+        
+        .channel-item.active {
+            background: #667eea;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid #3c4043;
+            background: #21252b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .channel-info h2 {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        .channel-info p {
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+        
+        .chat-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #5a67d8;
+        }
+        
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #1a1d29;
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        .message-content {
+            flex: 1;
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        
+        .message-author {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+            color: #8b949e;
+        }
+        
+        .message-text {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .message-input-container {
+            padding: 20px;
+            border-top: 1px solid #3c4043;
+            background: #21252b;
+        }
+        
+        .message-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .message-input {
+            flex: 1;
+            background: #2c2f36;
+            border: 1px solid #3c4043;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        
+        .message-input:focus {
+            border-color: #667eea;
+        }
+        
+        .send-btn {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .send-btn:hover {
+            background: #5a67d8;
+        }
+        
+        .ai-assistant {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .ai-assistant.active {
+            transform: translateY(0);
+        }
+        
+        .ai-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .ai-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .ai-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .video-call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .video-call-content {
+            background: #2c2f36;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            max-width: 500px;
+        }
+        
+        .video-placeholder {
+            width: 400px;
+            height: 300px;
+            background: #1a1d29;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        
+        .video-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+        
+        .control-btn.mute { background: #f59e0b; color: white; }
+        .control-btn.video { background: #10b981; color: white; }
+        .control-btn.screen { background: #667eea; color: white; }
+        .control-btn.end { background: #ef4444; color: white; }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: absolute;
+                z-index: 100;
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            
+            .ai-assistant {
+                width: calc(100% - 40px);
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="huddl-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    💬 HUDDL
+                </div>
+                <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 4px;">
+                    by SystemIX AI
+                </div>
+            </div>
+            
+            <div class="channels">
+                <div class="channel-section">
+                    <div class="channel-header">Channels</div>
+                    <div class="channel-item active" onclick="switchChannel('general')">
+                        <span>#</span> general
+                    </div>
+                    <div class="channel-item" onclick="switchChannel('development')">
+                        <span>#</span> development
+                    </div>
+                    <div class="channel-item" onclick="switchChannel('marketing')">
+                        <span>#</span> marketing
+                    </div>
+                    <div class="channel-item" onclick="switchChannel('sales')">
+                        <span>#</span> sales
+                    </div>
+                </div>
+                
+                <div class="channel-section">
+                    <div class="channel-header">Direct Messages</div>
+                    <div class="channel-item" onclick="switchChannel('john-doe')">
+                        <span>👤</span> John Doe
+                    </div>
+                    <div class="channel-item" onclick="switchChannel('jane-smith')">
+                        <span>👤</span> Jane Smith
+                    </div>
+                    <div class="channel-item" onclick="switchChannel('ai-assistant')">
+                        <span>🤖</span> AI Assistant
+                    </div>
+                </div>
+                
+                <div class="channel-section">
+                    <div class="channel-header">Meetings</div>
+                    <div class="channel-item" onclick="startVideoCall()">
+                        <span>📹</span> Start Video Call
+                    </div>
+                    <div class="channel-item" onclick="scheduleeMeeting()">
+                        <span>📅</span> Schedule Meeting
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="chat-header">
+                <div class="channel-info">
+                    <h2 id="current-channel"># general</h2>
+                    <p id="channel-description">Team-wide discussions and announcements</p>
+                </div>
+                <div class="chat-actions">
+                    <button class="action-btn" onclick="startVideoCall()">📹 Video Call</button>
+                    <button class="action-btn" onclick="shareScreen()">🖥️ Share Screen</button>
+                    <button class="action-btn" onclick="toggleAI()">🤖 AI Assistant</button>
+                </div>
+            </div>
+            
+            <div class="messages-container" id="messages">
+                <div class="message">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">SystemIX AI Assistant</span>
+                            <span class="message-time">now</span>
+                        </div>
+                        <div class="message-text">
+                            Welcome to HUDDL! I'm your AI assistant. I can help with meeting summaries, action items, and team coordination. How can I assist you today?
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="message">
+                    <div class="message-avatar">JD</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">John Doe</span>
+                            <span class="message-time">2 min ago</span>
+                        </div>
+                        <div class="message-text">
+                            Great work on the SystemIX AI platform! The autonomous features are incredible.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="message-input-container">
+                <div class="message-input-wrapper">
+                    <input type="text" class="message-input" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+                    <button class="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Assistant Panel -->
+    <div class="ai-assistant" id="aiAssistant">
+        <div class="ai-header">
+            <div class="ai-title">🤖 AI Assistant</div>
+            <button class="ai-close" onclick="toggleAI()">×</button>
+        </div>
+        <div style="font-size: 0.8rem; margin-bottom: 12px;">
+            I can help with:
+        </div>
+        <div style="display: grid; gap: 8px;">
+            <button class="action-btn" onclick="aiSuggestMeeting()">📅 Suggest Meeting Agenda</button>
+            <button class="action-btn" onclick="aiSummarizeChat()">📝 Summarize Chat</button>
+            <button class="action-btn" onclick="aiCreateTasks()">✅ Create Action Items</button>
+            <button class="action-btn" onclick="aiAnalyzeTeam()">📊 Team Analytics</button>
+        </div>
+    </div>
+    
+    <!-- Video Call Overlay -->
+    <div class="video-call-overlay" id="videoCallOverlay">
+        <div class="video-call-content">
+            <h2>Video Call - General Channel</h2>
+            <div class="video-placeholder">
+                📹
+            </div>
+            <div style="font-size: 0.9rem; margin-bottom: 10px;">
+                Call Duration: <span id="callDuration">00:00</span>
+            </div>
+            <div class="video-controls">
+                <button class="control-btn mute" onclick="toggleMute()" title="Mute/Unmute">🎤</button>
+                <button class="control-btn video" onclick="toggleVideo()" title="Camera On/Off">📹</button>
+                <button class="control-btn screen" onclick="shareScreen()" title="Share Screen">🖥️</button>
+                <button class="control-btn end" onclick="endCall()" title="End Call">📞</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize WebSocket
+        const socket = io();
+        let currentChannel = 'general';
+        let callStartTime = null;
+        let callTimer = null;
+        
+        socket.on('connect', function() {
+            console.log('Connected to HUDDL');
+            socket.emit('join_channel', {channel: currentChannel});
+        });
+        
+        socket.on('new_message', function(data) {
+            addMessage(data);
+        });
+        
+        function switchChannel(channel) {
+            // Leave current channel
+            socket.emit('leave_channel', {channel: currentChannel});
+            
+            // Join new channel
+            currentChannel = channel;
+            socket.emit('join_channel', {channel: channel});
+            
+            // Update UI
+            document.querySelectorAll('.channel-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            document.getElementById('current-channel').textContent = 
+                channel.startsWith('#') ? channel : `@ ${channel}`;
+            
+            // Clear messages (in real app, load channel history)
+            document.getElementById('messages').innerHTML = '';
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const messageData = {
+                    user_id: 1,
+                    channel: currentChannel,
+                    message: message,
+                    type: 'text',
+                    author: 'You',
+                    timestamp: new Date().toISOString()
+                };
+                
+                socket.emit('send_message', messageData);
+                input.value = '';
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function addMessage(data) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const avatar = data.author ? data.author.substring(0, 2).toUpperCase() : 'U';
+            const time = new Date(data.timestamp || Date.now()).toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${data.author || 'User'}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-text">${data.message}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function startVideoCall() {
+            document.getElementById('videoCallOverlay').style.display = 'flex';
+            callStartTime = Date.now();
+            updateCallDuration();
+            callTimer = setInterval(updateCallDuration, 1000);
+            
+            // Simulate joining call
+            addMessage({
+                author: 'System',
+                message: '📹 Video call started',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        function endCall() {
+            document.getElementById('videoCallOverlay').style.display = 'none';
+            if (callTimer) {
+                clearInterval(callTimer);
+                callTimer = null;
+            }
+            
+            addMessage({
+                author: 'System',
+                message: '📞 Video call ended',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        function updateCallDuration() {
+            if (callStartTime) {
+                const duration = Math.floor((Date.now() - callStartTime) / 1000);
+                const minutes = Math.floor(duration / 60);
+                const seconds = duration % 60;
+                document.getElementById('callDuration').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        function toggleMute() {
+            // Toggle mute functionality
+            alert('Microphone toggled');
+        }
+        
+        function toggleVideo() {
+            // Toggle video functionality
+            alert('Camera toggled');
+        }
+        
+        function shareScreen() {
+            alert('Screen sharing started - Premium HUDDL feature!');
+        }
+        
+        function scheduleeMeeting() {
+            alert('Meeting scheduled for tomorrow at 2 PM');
+        }
+        
+        function toggleAI() {
+            const aiAssistant = document.getElementById('aiAssistant');
+            aiAssistant.classList.toggle('active');
+        }
+        
+        function aiSuggestMeeting() {
+            addMessage({
+                author: 'AI Assistant',
+                message: '📅 Suggested meeting agenda:\n1. Review SystemIX AI performance metrics\n2. Discuss autonomous workflow optimizations\n3. Plan next sprint features\n4. Q&A session',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        function aiSummarizeChat() {
+            addMessage({
+                author: 'AI Assistant',
+                message: '📝 Chat Summary: Team discussed SystemIX AI platform progress. Key points: autonomous features working well, positive feedback on HUDDL integration, planning video call for detailed review.',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        function aiCreateTasks() {
+            addMessage({
+                author: 'AI Assistant',
+                message: '✅ Action Items Created:\n• Test autonomous lead processing (Due: Tomorrow)\n• Review AI performance metrics (Due: Friday)\n• Schedule client demo (Due: Next week)\n• Update documentation (Due: End of week)',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        function aiAnalyzeTeam() {
+            addMessage({
+                author: 'AI Assistant',
+                message: '📊 Team Analytics:\n• 8 members online\n• 47 messages today\n• 3 video calls this week\n• 94% response rate\n• Most active: #development channel',
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // Simulate some activity
+        setTimeout(() => {
+            addMessage({
+                author: 'Jane Smith',
+                message: 'The autonomous AI features are working perfectly! Just processed 50 leads automatically.',
+                timestamp: new Date().toISOString()
+            });
+        }, 5000);
+        
+        setTimeout(() => {
+            addMessage({
+                author: 'AI Assistant',
+                message: '🤖 Autonomous update: Successfully optimized 3 workflows, saving 25 hours per week. Confidence: 94%',
+                timestamp: new Date().toISOString()
+            });
+        }, 10000);
+    </script>
+</body>
+</html>
+

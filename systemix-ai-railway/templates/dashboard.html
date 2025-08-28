@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SystemIX AI Platinum Suite - Ultimate Enterprise Business Platform</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1a202c;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .welcome-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .welcome-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1.2rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .quick-action {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+        }
+        
+        .metric-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .metric-change {
+            color: #10b981;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+        
+        .ai-section {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .ai-insight {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .insight-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .insight-description {
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #06b6d4);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .activities-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .activity-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .activity-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .activity-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-completed { background: #10b981; }
+        .status-running { background: #f59e0b; }
+        .status-pending { background: #ef4444; }
+        
+        .huddl-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .huddl-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .autonomous-indicator {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            animation: autonomousGlow 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes autonomousGlow {
+            0% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+            100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+        }
+        
+        @media (max-width: 768px) {
+            .activities-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .welcome-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            🚀 SystemIX AI Platinum Suite
+        </div>
+        <div class="ai-status">
+            <div class="status-dot"></div>
+            <span>AI Engine Active</span>
+            <span class="autonomous-indicator">
+                🤖 Autonomous Mode
+            </span>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="welcome-section">
+            <h1 class="welcome-title">Welcome to SystemIX AI Platinum Suite</h1>
+            <p class="welcome-subtitle">The ultimate enterprise business management platform with advanced AI automation</p>
+            
+            <div class="quick-actions">
+                <div class="quick-action" onclick="addLead()">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">➕</div>
+                    <div style="font-weight: 600;">Add Lead</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">Quick lead entry</div>
+                </div>
+                <div class="quick-action" onclick="createTask()">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">📋</div>
+                    <div style="font-weight: 600;">Create Task</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">New workflow task</div>
+                </div>
+                <div class="quick-action" onclick="trainAI()">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">🧠</div>
+                    <div style="font-weight: 600;">Train AI Bot</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">Upload knowledge base</div>
+                </div>
+                <div class="quick-action" onclick="generateLeads()">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">🎯</div>
+                    <div style="font-weight: 600;">Generate Leads</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">AI-powered prospecting</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">{{ data.total_revenue }}</div>
+                <div class="metric-label">Total Revenue</div>
+                <div class="metric-change">{{ data.revenue_change }} from last month</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ data.active_workflows }}</div>
+                <div class="metric-label">Active Workflows</div>
+                <div class="metric-change">{{ data.automated_today }} automated today</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ data.ai_tasks_completed }}</div>
+                <div class="metric-label">AI Tasks Completed</div>
+                <div class="metric-change">{{ data.success_rate }} success rate</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ data.team_members }}</div>
+                <div class="metric-label">Team Members</div>
+                <div class="metric-change">{{ data.online_now }} online now</div>
+            </div>
+        </div>
+        
+        <div class="ai-section">
+            <div class="ai-header">
+                <span style="font-size: 1.5rem;">🧠</span>
+                <h2>AI Insights & Autonomous Recommendations</h2>
+            </div>
+            
+            <div class="ai-insight">
+                <div class="insight-title">{{ data.ai_insight.title }}</div>
+                <div class="insight-description">{{ data.ai_insight.description }}</div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" style="width: {{ (data.ai_insight.confidence * 100)|round }}%;"></div>
+                </div>
+                <div style="font-size: 0.8rem; margin-top: 8px; opacity: 0.8;">
+                    Confidence: {{ (data.ai_insight.confidence * 100)|round }}% | 
+                    Recommended Action: {{ data.ai_insight.action }}
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 600;">{{ data.neural_network_status|title }}</div>
+                    <div style="opacity: 0.8;">Neural Networks</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 600;">{{ data.ai_tasks_completed }}</div>
+                    <div style="opacity: 0.8;">Tasks Automated</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 600;">{{ data.success_rate }}</div>
+                    <div style="opacity: 0.8;">Success Rate</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 600;">15.3%</div>
+                    <div style="opacity: 0.8;">Monthly Improvement</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="activities-section">
+            <div class="activity-card">
+                <div class="activity-header">
+                    <span>⚡</span>
+                    Recent AI Activities
+                </div>
+                <div id="ai-activities">
+                    <div class="activity-item">
+                        <div class="activity-status status-completed"></div>
+                        <div>
+                            <div style="font-weight: 600;">Automated lead qualification workflow</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">2 min ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-status status-running"></div>
+                        <div>
+                            <div style="font-weight: 600;">Website scraping for new prospects</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">5 min ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-status status-pending"></div>
+                        <div>
+                            <div style="font-weight: 600;">Document template generation</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">10 min ago</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="activity-card">
+                <div class="activity-header">
+                    <span>🎯</span>
+                    Autonomous Actions Queue
+                </div>
+                <div id="autonomous-queue">
+                    <div class="activity-item">
+                        <div class="activity-status status-running"></div>
+                        <div>
+                            <div style="font-weight: 600;">Processing 23 new leads</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">AI Confidence: 94%</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-status status-pending"></div>
+                        <div>
+                            <div style="font-weight: 600;">Optimizing email sequences</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">Scheduled for execution</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-status status-pending"></div>
+                        <div>
+                            <div style="font-weight: 600;">Generating performance reports</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">Awaiting data collection</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <a href="/huddl" class="huddl-link">
+        💬 Open HUDDL Messenger
+    </a>
+    
+    <script>
+        // Initialize WebSocket connection
+        const socket = io();
+        
+        socket.on('connect', function() {
+            console.log('Connected to SystemIX AI');
+        });
+        
+        socket.on('ai_action_completed', function(data) {
+            console.log('AI Action Completed:', data);
+            updateAIActivities(data);
+        });
+        
+        function updateAIActivities(data) {
+            const activitiesDiv = document.getElementById('ai-activities');
+            const newActivity = document.createElement('div');
+            newActivity.className = 'activity-item';
+            newActivity.innerHTML = `
+                <div class="activity-status status-completed"></div>
+                <div>
+                    <div style="font-weight: 600;">Autonomous ${data.action.replace('_', ' ')}</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">Just now</div>
+                </div>
+            `;
+            activitiesDiv.insertBefore(newActivity, activitiesDiv.firstChild);
+            
+            // Remove old activities (keep only 5)
+            while (activitiesDiv.children.length > 5) {
+                activitiesDiv.removeChild(activitiesDiv.lastChild);
+            }
+        }
+        
+        // Quick action functions
+        function addLead() {
+            const name = prompt('Lead Name:');
+            const email = prompt('Lead Email:');
+            const company = prompt('Company:');
+            
+            if (name && email) {
+                fetch('/api/ai/process_lead', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        company: company
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(`Lead processed by AI!\nScore: ${data.ai_result.score}\nConfidence: ${(data.ai_result.confidence * 100).toFixed(1)}%\nNotes: ${data.ai_result.ai_notes}`);
+                });
+            }
+        }
+        
+        function createTask() {
+            alert('Task creation feature - AI will optimize this workflow automatically!');
+        }
+        
+        function trainAI() {
+            alert('AI Training initiated - Neural networks will update with new knowledge!');
+        }
+        
+        function generateLeads() {
+            alert('AI Lead Generation started - Autonomous prospecting in progress!');
+        }
+        
+        // Simulate real-time updates
+        setInterval(() => {
+            const actions = ['lead_qualification', 'workflow_optimization', 'data_analysis', 'customer_communication'];
+            const randomAction = actions[Math.floor(Math.random() * actions.length)];
+            
+            updateAIActivities({
+                action: randomAction,
+                timestamp: new Date().toISOString()
+            });
+        }, 30000); // Every 30 seconds
+    </script>
+</body>
+</html>
+
